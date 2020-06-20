@@ -3,6 +3,11 @@ Hype SymbolCache 1.1
 copyright (c) 2020 Max Ziebell, (https://maxziebell.de). MIT-license
 */
 
+/**
+ * A module that allows Tumult Hype symbols to be extended in a persistent way
+ * @module Hype SymbolCache
+ */
+
 /*
  * Version-History
  * 1.0 Initial release under MIT-license
