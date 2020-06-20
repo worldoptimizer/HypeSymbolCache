@@ -2,11 +2,12 @@
 Hype SymbolCache 1.1
 copyright (c) 2020 Max Ziebell, (https://maxziebell.de). MIT-license
 */
+
 /*
-* Version-History
-* 1.0 Initial release under MIT-license
-* 1.1 Bugfixes, additional API and immediate refresh
-*/
+ * Version-History
+ * 1.0 Initial release under MIT-license
+ * 1.1 Bugfixes, additional API and immediate refresh
+ */
 
 if("HypeSymbolCache" in window === false) window['HypeSymbolCache'] = (function () {
 
@@ -18,10 +19,12 @@ if("HypeSymbolCache" in window === false) window['HypeSymbolCache'] = (function 
 		_cache[hypeDocument.documentId()] = {}
 
 		/**
-		* hypeDocument.notifyEvent
-		* @param {object} containing at least type as name of event
-		* @param {HTMLDivElement} element
-		*/
+		 * This function is an copy of the function found in the Hype Runtime. As that is an IIFE it isn't available and hence we need to redifine it for custom event handling following the official Hype Event schema.
+		 *
+ 		 * @param {Object} event This object contains at least the event type (name of event) and in some cases some additional information (key, value) or nested structures
+		 * @param {HTMLElement} element This is the element the current tagert of the event or null if the event doesn't require or was called without an target
+		 * @return Returns the result of the event. Mostly this is an Boolean in case of Hype as it uses the events in an Observer pattern.
+		 */
 		hypeDocument.notifyEvent = function(event, element) {
 		    var eventListeners = window['HYPE_eventListeners'];
 		    if (eventListeners == null) {
@@ -40,11 +43,11 @@ if("HypeSymbolCache" in window === false) window['HypeSymbolCache'] = (function 
 		};
 		
 		/**
-		* hypeDocument.getSymbolInstanceForElement
-		* (based on work by @Stephen)
-		* @param {HTMLDivElement} inital element
-		* @return {symbolInstance} or null
-		*/
+		 * This helper does a backwards treewalk from the element it is started on and returns the symbolInstance if one is found. This function was originally written by Stephen Decker from Tumult Inc. but has been tweaked to use the Hype Symbol Cache. The cache is also used to return save the search result for child elements of symbols. Hence, a repeated symbol won't be a treewalk but rather a simple lookup.
+		 *
+		 * @param {HTMLElement} element The element to start the treewalk on
+		 * @return {Object} Returns the first found symbolInstance while tree walking or null if no symbolInstance is found
+		 */
 		hypeDocument.getSymbolInstanceForElement = function(element){
 			if (_cache[this.documentId()][element.id]) return _cache[this.documentId()][element.id];
 			var symbolInstance = null;
@@ -63,8 +66,10 @@ if("HypeSymbolCache" in window === false) window['HypeSymbolCache'] = (function 
 		
 
 		/**
-		* hypeDocument.purgeSymbolCache
-		*/
+		 * This function reset the entire symbol cache and purging the entire symbol cache. This resets the return values for getSymbolInstanceById an getSymbolInstancesByName for all symbol instances.
+		 *
+		 * @param {Boolean} refreshImmediately If this is set to true it will fire HypeSymbolInit rather then only deleting the symbol cache.
+		 */
 		hypeDocument.purgeSymbolCache = function(refreshImmediately){
 			if (refreshImmediately) {
 				for (var id in _cache[this.documentId()]){
@@ -76,9 +81,11 @@ if("HypeSymbolCache" in window === false) window['HypeSymbolCache'] = (function 
 		}
 
 		/**
-		* hypeDocument.purgeSymbolCacheForId
-		* @param {String} element id
-		*/
+		 * This function reset the symbol cache of an single symbol by purging its symbol instance from the symbol cache. This resets the return values for getSymbolInstanceById an getSymbolInstancesByName for the symbol instance with the given id.
+		 *
+		 * @param {String} id This is the id of the symbol cache that should be reseted
+		 * @param {Boolean} refreshImmediately If this is set to true it will fire HypeSymbolInit rather then only deleting the symbol cache.
+		 */
 		hypeDocument.purgeSymbolCacheForId = function(id, refreshImmediately){
 			if (refreshImmediately) {
 				hypeDocument.refreshSymbolCacheForId(id);
@@ -88,15 +95,24 @@ if("HypeSymbolCache" in window === false) window['HypeSymbolCache'] = (function 
 		}
 				
 		// Alias original command
-			hypeDocument._getSymbolInstanceById = hypeDocument.getSymbolInstanceById;
+		hypeDocument._getSymbolInstanceById = hypeDocument.getSymbolInstanceById;
 		hypeDocument._getSymbolInstancesByName = hypeDocument.getSymbolInstancesByName;
 
 
-		// Override regular command and add the symbol cache lookup
+		/**
+		 * This function overrides the original Hype document API and returns the symbol instance from the cache lookup instead. The original function is still available and aliased as hypeDocument._getSymbolInstanceById.
+		 *
+		 * @param {String} id The id your trying to get the symbolinstace from
+		 */
 		hypeDocument.getSymbolInstanceById = function(id){
 			return _cache[this.documentId()][id];
 		}
 		
+		/**
+		 * This function overrides the original Hype document API and returns the symbol instances requested by name from the cache lookup instead. The original function is still available and aliased as hypeDocument._getSymbolInstancesByName.
+		 *
+		 * @param {String} id The id your trying to get the symbol instance from
+		 */
 		hypeDocument.getSymbolInstancesByName = function(name){
 			var instances = hypeDocument._getSymbolInstancesByName(name);
 			var cacheList = [];
@@ -106,11 +122,21 @@ if("HypeSymbolCache" in window === false) window['HypeSymbolCache'] = (function 
 			return cacheList;
 		}
 		
+		/**
+		 * This function refreshes the symbol cache by requesting a fresh copy of the symbol instance APi from the Hype Runtime and firing the custom event HypeSymbolInit afterwards
+		 *
+		 * @param {String} id The id your trying to refresh the symbol instance for
+		 */
 		hypeDocument.refreshSymbolCacheForId = function(id){
 			_cache[hypeDocument.documentId()][id] = hypeDocument._getSymbolInstanceById(id);
+			//todo in 1.2 only fire if cache is set for an symbol and is not null to secure against user passing in a non symbol id
 			hypeDocument.notifyEvent({type: "HypeSymbolInit"}, document.getElementById(id));
 		}
-		
+		/**
+		 * This function refreshes the symbol cache by requesting a fresh copy of the symbol instance API from the Hype Runtime and firing the custom event HypeSymbolInit afterwards but only if the system cache isn't already set for the id
+		 *
+		 * @param {String} id The id your trying to refresh the symbol instance for
+		 */		
 		hypeDocument.refreshSymbolCacheForIdIfNecessary = function(id){
 			if (!_cache[hypeDocument.documentId()][id]) {
 				this.refreshSymbolCacheForId(id);
