@@ -5,7 +5,7 @@ copyright (c) 2020 Max Ziebell, (https://maxziebell.de). MIT-license
 
 /**
  * A module that allows Tumult Hype symbols to be extended in a persistent way
- * @module Hype SymbolCache
+ * @module HypeSymbolCache
  */
 
 /*
@@ -157,9 +157,18 @@ if("HypeSymbolCache" in window === false) window['HypeSymbolCache'] = (function 
 	window.HYPE_eventListeners.push({"type":"HypeDocumentLoad", "callback":documentLoad});
 	window.HYPE_eventListeners.push({"type":"HypeSymbolLoad", "callback":symbolLoad});
 
-	/* Reveal Public interface to window['HypeSymbolCache'] */
-	return {
-		version: '1.1'
+	/**
+	 * @typedef {Object} HypeHandlebars
+	 * @property {String} version Version of the extension
+	 */
+	var HypeSymbolCache = {
+		version: '1.1',
 	};
+
+	/** 
+	 * Reveal Public interface to window['HypeSymbolCache'] 
+	 * return {HypeSymbolCache}
+	 */
+	return HypeSymbolCache;
 })();
 
